@@ -1,0 +1,101 @@
+<div class="page-head">
+  <div>
+    <h1 class="page-title">信源与提醒</h1>
+    <p class="page-desc">RSS 订阅、验证提醒、推送设置</p>
+  </div>
+  <a routerLink="/news" class="btn-ghost btn-sm">← 新闻</a>
+</div>
+
+<div class="card">
+  <p class="card-title">服务状态</p>
+  <div class="status-line">
+    @if (api.online()) {
+      <span class="ok">● 后端服务在线 · http://127.0.0.1:4300</span>
+    } @else {
+      <span class="warn">● 后端服务未连接</span>
+    }
+  </div>
+  @if (!api.online()) {
+    <p class="hint">在 <code>prediction-app/server</code> 目录执行 <code>npm start</code> 启动服务后刷新。RSS 拉取、行情代理和推送都依赖它。</p>
+  }
+</div>
+
+<div class="card">
+  <p class="card-title">RSS 信源</p>
+  <div class="feed-list">
+    @for (f of api.feeds(); track f.id) {
+      <div class="feed-row" [class.disabled]="!f.enabled">
+        <div class="feed-main">
+          <div class="feed-name">{{ f.name }} <span class="group">{{ f.group }}</span></div>
+          <div class="feed-url">{{ f.url }}</div>
+          <div class="feed-meta">
+            上次 {{ formatTime(f.lastFetchedAt) }}
+            @if (f.failCount) { <span class="fail">连续失败 {{ f.failCount }} 次</span> }
+            @if (!f.enabled && f.failCount >= 3) { <span class="paused">已自动暂停</span> }
+          </div>
+          @if (f.lastError) { <div class="error">{{ f.lastError }}</div> }
+        </div>
+        <div class="feed-ops">
+          <button class="btn-ghost btn-sm" [disabled]="api.syncing()" (click)="syncOne(f)">拉取</button>
+          <button class="btn-ghost btn-sm" (click)="api.toggleFeed(f.id)">{{ f.enabled ? '停用' : '启用' }}</button>
+          <button class="btn-ghost btn-sm danger" (click)="api.removeFeed(f.id)">删除</button>
+        </div>
+      </div>
+    } @empty {
+      <p class="hint">还没有信源。用下面的表单添加，或从推荐模板起步。</p>
+    }
+  </div>
+</div>
+
+<div class="card">
+  <p class="card-title">添加信源</p>
+  <div class="templates">
+    <button class="btn-ghost btn-sm" (click)="useTemplate('jiufeng')">玖峰日报</button>
+    <button class="btn-ghost btn-sm" (click)="useTemplate('daily')">每日财经</button>
+    <button class="btn-ghost btn-sm" (click)="useTemplate('rsshub')">财联社公告</button>
+  </div>
+  <label class="field">
+    <span class="field-label">名称</span>
+    <input [(ngModel)]="newName" placeholder="给信源起个名字">
+  </label>
+  <label class="field">
+    <span class="field-label">RSS 地址 *</span>
+    <input [(ngModel)]="newUrl" placeholder="https://example.com/feed.xml">
+  </label>
+  <label class="field">
+    <span class="field-label">分组</span>
+    <select [(ngModel)]="newGroup">
+      @for (g of groups; track g) { <option [value]="g">{{ g }}</option> }
+    </select>
+  </label>
+  @if (formError()) { <p class="error">{{ formError() }}</p> }
+  <button class="btn" [disabled]="!newUrl.trim()" (click)="addFeed()">添加</button>
+  <p class="hint">RSSHub 公共实例常限流，财联社路由可能失败；连续失败 3 次会自动暂停该源。</p>
+</div>
+
+<div class="card">
+  <p class="card-title">验证提醒（Web Push）</p>
+  @if (!push.supported()) {
+    <p class="hint">当前环境不支持推送。需 HTTPS 或 localhost，且浏览器支持 Service Worker + Push API。</p>
+  } @else {
+    <div class="status-line">
+      <span>通知权限：{{ push.permission() }}</span>
+      <span class="ok" [class.off]="!push.subscribed()">{{ push.subscribed() ? '● 已开启' : '○ 未开启' }}</span>
+    </div>
+    <p class="hint">开启后按待验证预判自动安排提醒：开盘 09:31、收盘 15:05、T+N 日 15:05（按交易日推算）。iOS 需先「添加到主屏幕」。</p>
+    <div class="push-ops">
+      <button class="btn btn-sm" [disabled]="push.busy() || push.subscribed()" (click)="push.enable()">
+        {{ push.busy() ? '处理中…' : '开启提醒' }}
+      </button>
+      <button class="btn-ghost btn-sm" [disabled]="!push.subscribed()" (click)="push.disable()">关闭</button>
+      <button class="btn-ghost btn-sm" [disabled]="!push.subscribed()" (click)="push.sendTest()">测试通知</button>
+      <button class="btn-ghost btn-sm" (click)="push.syncReminders()">同步提醒时点</button>
+    </div>
+    @if (push.message()) { <p class="hint message">{{ push.message() }}</p> }
+  }
+</div>
+
+<div class="card">
+  <p class="card-title">PWA 安装</p>
+  <p class="hint">在浏览器菜单选择「安装应用」或「添加到主屏幕」，可全屏打开并离线查看已缓存的新闻与本地数据。行情与验证结果不缓存，保证判定可信。</p>
+</div>

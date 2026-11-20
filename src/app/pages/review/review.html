@@ -1,0 +1,86 @@
+<div class="page-head">
+  <div>
+    <h1 class="page-title">复盘看板</h1>
+    <p class="page-desc">只统计可判定结果 · 失效不计入分母</p>
+  </div>
+  <button class="btn-ghost btn-sm" (click)="resetAll()">清空数据</button>
+</div>
+
+<div class="metrics">
+  <div class="metric">
+    <div class="metric-label">总准确率</div>
+    <div class="metric-value">{{ store.overallStats().rate }}%</div>
+    <div class="metric-sub">{{ store.overallStats().hit }} / {{ store.overallStats().total }} 命中</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">部分命中</div>
+    <div class="metric-value">{{ store.overallStats().partial }}</div>
+    <div class="metric-sub">方向对幅度不足</div>
+  </div>
+  <div class="metric">
+    <div class="metric-label">失效</div>
+    <div class="metric-value">{{ store.overallStats().invalid }}</div>
+    <div class="metric-sub">不计入分母</div>
+  </div>
+</div>
+
+<div class="card">
+  <p class="card-title">分窗口表现</p>
+  @for (s of store.statsByWindow(); track s.window) {
+    <div class="bar-row">
+      <div class="bar-head">
+        <span>{{ s.label }}</span>
+        <span class="mono">{{ s.rate }}% <span class="muted">({{ s.hit }}/{{ s.total }})</span></span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill" [style.width.%]="s.rate"></div>
+      </div>
+    </div>
+  }
+</div>
+
+<div class="card">
+  <p class="card-title">置信度校准</p>
+  <p class="hint-text">理想情况：置信度越高，命中率越高</p>
+  @for (c of store.calibration(); track c.label) {
+    <div class="bar-row">
+      <div class="bar-head">
+        <span>{{ c.label }}</span>
+        <span class="mono">{{ c.rate }}% <span class="muted">({{ c.hit }}/{{ c.total }})</span></span>
+      </div>
+      <div class="bar-track">
+        <div class="bar-fill cal" [style.width.%]="c.rate"></div>
+      </div>
+    </div>
+  }
+</div>
+
+<div class="card">
+  <p class="card-title">验证明细</p>
+  <div class="filters">
+    <button class="chip" [class.on]="filter() === 'all'" (click)="filter.set('all')">全部</button>
+    <button class="chip" [class.on]="filter() === 'hit'" (click)="filter.set('hit')">命中</button>
+    <button class="chip" [class.on]="filter() === 'miss'" (click)="filter.set('miss')">未命中</button>
+    <button class="chip" [class.on]="filter() === 'partial'" (click)="filter.set('partial')">部分</button>
+  </div>
+
+  @if (filtered().length === 0) {
+    <div class="empty small">暂无验证记录</div>
+  } @else {
+    @for (v of filtered(); track v.id) {
+      <div class="v-row">
+        <div class="v-head">
+          <span class="v-asset">{{ predictionFor(v.predictionId)?.assetCode }} {{ predictionFor(v.predictionId)?.assetName }}</span>
+          <span class="tag" [ngClass]="'tag-' + v.result">{{ resultLabel[v.result] }}</span>
+        </div>
+        <div class="v-sub">
+          {{ winLabel[v.windowType] }} · {{ v.verifyDate }} · 阈值 {{ v.threshold }}%
+        </div>
+        <div class="v-numbers mono">
+          {{ v.baseLabel }} {{ v.basePrice }} → {{ v.targetLabel }} {{ v.targetPrice }}
+          <span [class]="v.actualChangePct >= 0 ? 'up' : 'down'">{{ fmtPct(v.actualChangePct) }}</span>
+        </div>
+      </div>
+    }
+  }
+</div>

@@ -1,0 +1,114 @@
+<div class="page-head">
+  <div>
+    <h1 class="page-title">开市验证</h1>
+    <p class="page-desc">实时行情自动对账 · 规则按提交时锁定值判定</p>
+  </div>
+  <button class="btn btn-sm" (click)="showForm.set(!showForm())">
+    {{ showForm() ? '收起' : '导入行情' }}
+  </button>
+</div>
+
+<div class="auto-bar">
+  <div class="auto-info">
+    @if (api.online()) {
+      <span class="ok">● 行情服务在线</span>
+      <span class="hint">仅验证目标日为今天的预判；T+N 需到期后手动补价</span>
+    } @else {
+      <span class="warn">行情服务未连接 · 请用下方手动导入</span>
+    }
+  </div>
+  <button class="btn btn-sm" [disabled]="autoBusy() || !api.online()" (click)="autoFetch()">
+    {{ autoBusy() ? '拉取中…' : '↻ 自动验证' }}
+  </button>
+</div>
+@if (autoMessage()) { <div class="auto-msg">{{ autoMessage() }}</div> }
+
+@if (showForm()) {
+  <div class="card">
+    <p class="card-title">粘贴行情数据</p>
+    <div class="format-box">
+      <div class="format-title">格式（每行一条，逗号分隔）</div>
+      <code>代码,交易日,昨收,今开,今收,T+N收盘</code>
+      <div class="format-hint">例：000001,2026-11-20,11.20,11.25,11.27,11.60</div>
+      <div class="format-hint">第 6 列可省略；省略则该预判的 T+N 窗口留待补价</div>
+    </div>
+    <label class="field">
+      <textarea [(ngModel)]="csv" rows="6" placeholder="000001,2026-11-20,11.20,11.25,11.27,11.60"></textarea>
+    </label>
+    @if (parseError()) { <div class="error">{{ parseError() }}</div> }
+    <button class="btn" [disabled]="!csv.trim()" (click)="runImport()">批量验证</button>
+  </div>
+}
+
+@if (lastRun(); as r) {
+  <div class="card run-result">
+    <p class="card-title">本次结果</p>
+    <div>匹配行情 <b>{{ r.matched }}</b> 条 · 生成验证 <b>{{ r.verified }}</b> 条</div>
+    @if (r.skipped.length) {
+      <div class="skip-list">
+        @for (s of r.skipped; track s) { <div>· {{ s }}</div> }
+      </div>
+    }
+  </div>
+}
+
+<div class="card">
+  <div class="card-title-row">
+    <p class="card-title">待验证预判（{{ pending().length }}）</p>
+    @if (pending().length) {
+      <button class="btn-ghost btn-sm" (click)="manualOpen.set(!manualOpen())">手动验证</button>
+    }
+  </div>
+
+  @if (manualOpen()) {
+    <div class="manual-box">
+      <label class="field">
+        <span class="field-label">选择预判</span>
+        <select [(ngModel)]="manualPredictionId">
+          <option value="">请选择</option>
+          @for (p of pending(); track p.id) {
+            <option [value]="p.id">{{ p.assetCode }} {{ p.assetName }} · {{ p.targetMarketDate }}</option>
+          }
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">验证窗口</span>
+        <select [(ngModel)]="manualWindow">
+          <option value="day_close">当日方向（昨收→今收）</option>
+          <option value="open_gap">开盘跳空（昨收→今开）</option>
+          <option value="n_day">趋势延续（T日收→T+N收）</option>
+        </select>
+      </label>
+      <div class="row">
+        <label class="field">
+          <span class="field-label">基准价</span>
+          <input type="number" step="0.001" [(ngModel)]="manualBase">
+        </label>
+        <label class="field">
+          <span class="field-label">验证价</span>
+          <input type="number" step="0.001" [(ngModel)]="manualTarget">
+        </label>
+      </div>
+      <button class="btn" [disabled]="!manualPredictionId || !manualBase || !manualTarget" (click)="submitManual()">提交验证</button>
+    </div>
+  }
+
+  @if (pending().length === 0) {
+    <div class="empty small">没有待验证的预判</div>
+  } @else {
+    @for (p of pending(); track p.id) {
+      <div class="pending-row">
+        <div class="pending-main">
+          <div class="pending-title">{{ p.assetCode }} {{ p.assetName }}</div>
+          <div class="pending-sub">
+            {{ p.targetMarketDate }} · 已验证 {{ verifiedCount(p) }}/{{ p.windows.length }}
+            @if (p.windows.includes('n_day')) { · T+{{ p.nDays }} }
+          </div>
+        </div>
+        @if (manualWindowsFor(p).length) {
+          <span class="tag tag-pending">缺 {{ manualWindowsFor(p).join(',') }}</span>
+        }
+      </div>
+    }
+  }
+</div>

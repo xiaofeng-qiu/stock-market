@@ -1,0 +1,130 @@
+<div class="page-head">
+  <div>
+    <h1 class="page-title">新闻流</h1>
+    <p class="page-desc">RSS 自动拉取 · 标的自动标注 · 每条可直接记预判</p>
+  </div>
+  <button class="btn btn-sm" (click)="showForm.set(!showForm())">
+    {{ showForm() ? '收起' : '+ 录入' }}
+  </button>
+</div>
+
+<div class="sync-bar">
+  <div class="sync-status">
+    @if (!api.online()) {
+      <span class="warn">服务未连接 · 启动 prediction-app/server 后可拉取 RSS</span>
+    } @else {
+      <span class="ok">● 服务在线</span>
+      @if (api.lastSync()) { <span class="time">上次同步 {{ formatTime(api.lastSync()!) }}</span> }
+    }
+  </div>
+  <div class="sync-actions">
+    <a routerLink="/settings" class="btn-ghost btn-sm">信源</a>
+    <button class="btn btn-sm" [disabled]="api.syncing() || !api.online()" (click)="sync()">
+      {{ api.syncing() ? '拉取中…' : '↻ 拉取' }}
+    </button>
+  </div>
+</div>
+@if (api.syncMessage()) { <div class="sync-msg">{{ api.syncMessage() }}</div> }
+
+@if (showForm()) {
+  <div class="card">
+    <p class="card-title">手动录入新闻（RSS 不可用时的兜底）</p>
+    <label class="field">
+      <span class="field-label">标题 *</span>
+      <input [(ngModel)]="title" placeholder="例：央行宣布全面降准 0.5 个百分点">
+    </label>
+    <label class="field">
+      <span class="field-label">摘要</span>
+      <textarea [(ngModel)]="summary" placeholder="一句话说清是什么事"></textarea>
+    </label>
+    <div class="row">
+      <label class="field">
+        <span class="field-label">分类</span>
+        <select [(ngModel)]="category">
+          <option>宏观政策</option>
+          <option>公司公告</option>
+          <option>行业动态</option>
+          <option>财报业绩</option>
+          <option>海外市场</option>
+        </select>
+      </label>
+      <label class="field">
+        <span class="field-label">来源</span>
+        <input [(ngModel)]="source" placeholder="手动录入">
+      </label>
+    </div>
+    <div class="row">
+      <label class="field">
+        <span class="field-label">关联代码</span>
+        <input [(ngModel)]="assetCode" placeholder="000001">
+      </label>
+      <label class="field">
+        <span class="field-label">关联名称</span>
+        <input [(ngModel)]="assetName" placeholder="平安银行">
+      </label>
+    </div>
+    <button class="btn" [disabled]="!title.trim()" (click)="add()">保存新闻</button>
+  </div>
+}
+
+@if (store.news().length === 0) {
+  <div class="empty">还没有新闻。点「↻ 拉取」从 RSS 获取，或手动录入。</div>
+} @else {
+  @for (n of store.news(); track n.id) {
+    <div class="card news-card">
+      <div class="news-meta">
+        <span class="tag">{{ n.category }}</span>
+        <span class="time">{{ n.source }} · {{ formatTime(n.publishedAt) }}</span>
+      </div>
+      <div class="news-title">
+        @if (n.url) {
+          <a [href]="n.url" target="_blank" rel="noopener">{{ n.title }}</a>
+        } @else { {{ n.title }} }
+      </div>
+      @if (n.summary) { <div class="news-summary">{{ n.summary }}</div> }
+      @if (n.signals?.length) {
+        <div class="signals">
+          @for (s of n.signals; track s) { <span class="signal">{{ s }}</span> }
+        </div>
+      }
+      @if (n.candidates?.length && !n.tagged) {
+        <div class="candidate-box">
+          <div class="candidate-hint">自动识别到标的，点选确认：</div>
+          <div class="candidate-list">
+            @for (c of n.candidates; track c.code + c.name) {
+              <button class="candidate" (click)="confirmTag(n, c.code, c.name)">
+                {{ c.name }}{{ c.code ? ' · ' + c.code : '' }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+      <div class="news-foot">
+        @if (n.assetCode || n.assetName) {
+          <span class="asset">{{ n.assetCode }} {{ n.assetName }}</span>
+        } @else {
+          <span class="asset muted">未关联标的 · 可直接记预判</span>
+        }
+        <div class="actions">
+          <button class="btn-ghost btn-sm" (click)="goPredict(n)">记预判</button>
+          @if (n.candidates?.length) {
+            <button class="btn-ghost btn-sm" (click)="toggleTags(n.id)">标注</button>
+          }
+          <button class="btn-ghost btn-sm danger" (click)="remove(n.id)">删除</button>
+        </div>
+      </div>
+      @if (showTagsFor() === n.id) {
+        <div class="candidate-box">
+          <div class="candidate-hint">选择关联标的：</div>
+          <div class="candidate-list">
+            @for (c of n.candidates; track c.code + c.name) {
+              <button class="candidate" (click)="confirmTag(n, c.code, c.name)">
+                {{ c.name }}{{ c.code ? ' · ' + c.code : '' }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+    </div>
+  }
+}

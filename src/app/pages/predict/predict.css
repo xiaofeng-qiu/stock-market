@@ -1,0 +1,70 @@
+.linked-news {
+  background: var(--accent-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+}
+.linked-title { font-size: 13px; font-weight: 500; line-height: 1.45; }
+.linked-source { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+.seg { display: flex; gap: 8px; }
+.seg-item {
+  flex: 1;
+  padding: 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  font-size: 14px;
+  cursor: pointer;
+}
+.seg-item.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 500; }
+.seg-item.on.dir-up { border-color: var(--up); background: #fdeceb; color: var(--up); }
+.seg-item.on.dir-down { border-color: var(--down); background: #e8f6f0; color: var(--down); }
+
+.checks { display: flex; flex-wrap: wrap; gap: 8px; }
+.check {
+  padding: 7px 12px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+.check.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+
+.n-days { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 12px; color: var(--muted); }
+.chip {
+  border: 1px solid var(--border); background: #fff; border-radius: 6px;
+  padding: 3px 10px; font-size: 12px; cursor: pointer;
+}
+.chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.hint { margin-left: 4px; }
+.slider { padding: 0; border: none; }
+
+.lock-note {
+  font-size: 11px;
+  color: var(--warn);
+  background: #fff9e8;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 12px;
+}
+
+.pred-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+.pred-asset { font-size: 15px; font-weight: 600; }
+.pred-dir { font-size: 13px; margin-bottom: 4px; }
+.pred-meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+.pred-reason {
+  font-size: 13px;
+  color: #444;
+  background: #f7f8fa;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+}
+.sep { color: #ccc; margin: 0 6px; }
+.pred-foot { display: flex; justify-content: space-between; align-items: center; }
+.time { font-size: 11px; color: var(--muted); }
+.tag-pending { background: var(--accent-soft); color: var(--accent); }
+.tag-verified { background: #e8f6f0; color: var(--down); }
+.tag-void { background: #f0f1f3; color: var(--muted); }

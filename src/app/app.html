@@ -1,0 +1,37 @@
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">判</span>
+      <div>
+        <div class="brand-title">预判验证</div>
+        <div class="brand-sub">新闻 · 判断 · 对账</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      @if (store.news().length === 0 && store.predictions().length === 0) {
+        <button class="btn-ghost btn-sm" (click)="seedDemo()">载入示例</button>
+      }
+      <a routerLink="/settings" class="btn-ghost btn-sm" title="信源与提醒">⚙</a>
+    </div>
+  </header>
+
+  @if (updateReady()) {
+    <div class="update-banner">
+      <span>新版本已就绪</span>
+      <button (click)="applyUpdate()">立即更新</button>
+    </div>
+  }
+
+  <main class="content">
+    <router-outlet />
+  </main>
+
+  <nav class="tabbar">
+    @for (tab of tabs; track tab.path) {
+      <a [routerLink]="tab.path" routerLinkActive="active" class="tab">
+        <span class="tab-icon">{{ tab.icon }}</span>
+        <span>{{ tab.label }}</span>
+      </a>
+    }
+  </nav>
+</div>
